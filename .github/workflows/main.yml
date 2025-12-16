@@ -24,7 +24,7 @@ jobs:
             cd /home/ubuntu || exit 1
 
             if [ ! -d "EASYBOOK-backend" ]; then
-              git clone https://github.com/keerthikumar-k/bookingweb.git
+              git clone https://github.com/keerthikumar-k/bookingweb.git EASYBOOK-backend
             fi
 
             cd EASYBOOK-backend || exit 1
