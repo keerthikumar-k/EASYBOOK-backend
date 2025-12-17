@@ -1,4 +1,4 @@
-name: Deploy EASYBOOK Backend to EC2
+name: Deploy Node App to EC2
 
 on:
   push:
@@ -7,14 +7,13 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to EC2
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -22,38 +21,19 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            set -e
-
-            echo "🚀 Starting deployment..."
-
-            cd /home/ubuntu
+            cd /home/ubuntu || exit 1
 
             if [ ! -d "EASYBOOK-backend" ]; then
-              echo "📦 Cloning repository..."
               git clone https://github.com/keerthikumar-k/EASYBOOK-backend.git
             fi
 
-            cd EASYBOOK-backend
-            echo "🔄 Pulling latest code..."
-            git fetch origin
-            git reset --hard origin/main
+            cd EASYBOOK-backend || exit 1
+            git pull origin main
 
-            cd easybook-backend
+            echo "MONGO_URI=${{ secrets.MONGO_URI }}" > .env
+            echo "PORT=3001" >> .env
 
-            echo "🔐 Writing environment variables..."
-            cat <<EOF > .env
-            MONGODB_URI=${{ secrets.MONGODB_URI }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            PORT=3001
-            NODE_ENV=production
-            EOF
-
-            echo "📦 Installing dependencies..."
-            npm ci --production
-
-            echo "♻️ Restarting PM2 process..."
-            pm2 delete easybook-api || true
-            pm2 start server.js --name easybook-api
+            npm install
+            pm2 delete student-api || true
+            pm2 start server.js --name student-api
             pm2 save
-
-            echo "✅ Deployment completed successfully!"
